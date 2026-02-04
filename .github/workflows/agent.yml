@@ -34,6 +34,6 @@ jobs:
         run: |
           git config user.name "content-agent"
           git config user.email "agent@users.noreply.github.com"
-          git add output/post.txt output/posts_*.txt output/*.png output/short.mp4
-          git commit -m "agent: generate assets" || echo "No changes to commit"
-          git push
+            git add output/post*.txt output/posts_*.txt output/*.png output/short_*.mp4
+            git commit -m "agent: scale to 3 shorts per run" || echo "No changes to commit"
+         git push
