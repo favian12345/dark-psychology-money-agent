@@ -24,13 +24,16 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Run Agent
-        run: python generate_post.py
+      - name: Install deps
+        run: pip install pillow
+
+      - name: Run Agent (text + images + mp4)
+        run: python generate_assets.py
 
       - name: Commit & Push Output
         run: |
           git config user.name "content-agent"
           git config user.email "agent@users.noreply.github.com"
-          git add output/post.txt output/posts_*.txt
-          git commit -m "agent: generate post" || echo "No changes to commit"
+          git add output/post.txt output/posts_*.txt output/*.png output/short.mp4
+          git commit -m "agent: generate assets" || echo "No changes to commit"
           git push
