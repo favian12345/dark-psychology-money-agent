@@ -3,7 +3,7 @@ name: Dark Psychology Money Agent
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 16 * * *"  # Daily at 16:00 UTC (~8am Los Angeles, varies with DST)
+    - cron: "0 16 * * *"  # Daily 16:00 UTC (~8am LA, DST varies)
 
 permissions:
   contents: write
@@ -27,13 +27,13 @@ jobs:
       - name: Install deps
         run: pip install pillow imageio-ffmpeg
 
-      - name: Run Agent (text + images + mp4)
+      - name: Run Agent (3 posts + images + mp4s)
         run: python generate_assets.py
 
       - name: Commit & Push Output
         run: |
           git config user.name "content-agent"
           git config user.email "agent@users.noreply.github.com"
-            git add output/post*.txt output/posts_*.txt output/*.png output/short_*.mp4
-            git commit -m "agent: scale to 3 shorts per run" || echo "No changes to commit"
-         git push
+          git add output/post*.txt output/posts_*.txt output/*.png output/short_*.mp4
+          git commit -m "agent: scale to 3 shorts per run" || echo "No changes to commit"
+          git push
