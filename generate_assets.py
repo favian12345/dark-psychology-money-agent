@@ -1,8 +1,8 @@
-import os, random, textwrap, subprocess
+import os, random, subprocess
 from datetime import datetime
 from PIL import Image, ImageDraw, ImageFont
-
 import imageio_ffmpeg
+
 HASHTAGS = [
     "#money", "#wealth", "#mindset", "#psychology", "#darkpsychology",
     "#discipline", "#success", "#financialfreedom", "#selfimprovement",
@@ -40,14 +40,12 @@ def normalize_post(block: str) -> str:
     return text
 
 def get_font(size: int, bold=True):
-    # GitHub runner has DejaVu fonts. This path is stable on ubuntu-latest.
-    path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" if bold else \
-     
-           "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+    # GitHub runner has DejaVu fonts. This path is stable on ubuntu‑latest.
+    path = ("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+            if bold else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")
     return ImageFont.truetype(path, size=size)
 
 def fit_text(draw, text, font, max_width):
-    # Wrap text to fit width using an approximate character width
     words = text.split()
     lines = []
     cur = ""
@@ -67,7 +65,6 @@ def render_card(out_path, W, H, main_text):
     # Background (dark gradient-ish)
     img = Image.new("RGB", (W, H), (10, 12, 18))
     draw = ImageDraw.Draw(img)
-
     # Simple subtle vignette
     overlay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     od = ImageDraw.Draw(overlay)
@@ -76,25 +73,22 @@ def render_card(out_path, W, H, main_text):
     od.ellipse([-W*0.3, -H*0.3, W*1.3, H*1.3], fill=(0, 0, 0, 90))
     img = Image.alpha_composite(img.convert("RGBA"), overlay).convert("RGB")
     draw = ImageDraw.Draw(img)
-
     # Layout
     pad = int(W * 0.08)
     brand_h = int(H * 0.10)
     top_y = int(H * 0.12)
     text_area_h = H - brand_h - top_y - int(H * 0.08)
-
     # Brand bar
     draw.rectangle([0, H - brand_h, W, H], fill=(6, 44, 120))
     brand_font = get_font(int(H * 0.028), bold=True)
     brand_w = draw.textlength(BRAND_LINE, font=brand_font)
     draw.text(((W - brand_w) / 2, H - brand_h + (brand_h - brand_font.size) / 2),
               BRAND_LINE, font=brand_font, fill=(255, 255, 255))
-
     # Main text: auto-size font to fit
     max_width = W - 2 * pad
     max_height = text_area_h
     # Start big, shrink until it fits
-    size = int(H * 0.060)  # good starting point
+    size = int(H * 0.060)
     while size > int(H * 0.030):
         font = get_font(size, bold=True)
         lines = []
@@ -111,7 +105,6 @@ def render_card(out_path, W, H, main_text):
         if total_h <= max_height and all(draw.textlength(l, font=font) <= max_width for l in lines):
             break
         size -= 2
-
     # Draw centered
     font = get_font(size, bold=True)
     line_h = int(size * 1.25)
@@ -125,20 +118,15 @@ def render_card(out_path, W, H, main_text):
         draw.text((x+2, y+2), l, font=font, fill=(0, 0, 0))
         draw.text((x, y), l, font=font, fill=(245, 245, 245))
         y += line_h
-
     img.save(out_path, "PNG")
 
-def make_caption(post_text):
-    return f"""{post_text}
-
-Read that again.
-
-{pick_hashtags()}"""
+def make_caption(post_text: str) -> str:
+    return (f"{post_text}\n\n"
+            "Watch again.\n\n"
+            "#money #psychology #wealth #darkpsychology #discipline #shorts\n")
 
 def make_video_from_image(image_path, out_mp4, seconds=61):
-    # Super-stable: static image video. (No zoompan = fewer surprises)
-    cmd = 
-        cmd = [
+    cmd = [
         imageio_ffmpeg.get_ffmpeg_exe(), "-y",
         "-loop", "1", "-i", image_path,
         "-t", str(seconds),
@@ -146,39 +134,34 @@ def make_video_from_image(image_path, out_mp4, seconds=61):
         "-r", "30",
         "-movflags", "+faststart",
         out_mp4
-  ]  
-    
+    ]
     subprocess.run(cmd, check=True)
 
 def main():
     os.makedirs("output", exist_ok=True)
-
     blocks = load_blocks("lines.txt")
-    chosen = normalize_post(random.choice(blocks))
-
-    caption = make_caption(chosen)
-
-    # Write caption outputs
-    with open("output/post.txt", "w", encoding="utf-8") as f:
-        f.write(caption)
-
+    if len(blocks) < 3:
+        raise SystemExit("Need at least three blocks in lines.txt to generate 3 posts.")
+    chosen_blocks = random.sample(blocks, 3)
     today = datetime.utcnow().strftime("%Y-%m-%d")
-    with open(f"output/posts_{today}.txt", "a", encoding="utf-8") as f:
-        f.write(caption)
-        f.write("\n" + ("-" * 30) + "\n\n")
-
-    # Render images
-    render_card("output/post_story.png", 1080, 1920, chosen)
-    render_card("output/post_feed.png", 1080, 1350, chosen)
-
-    # Render a simple Shorts-ready MP4 (60–62s)
-    make_video_from_image("output/post_story.png", "output/short.mp4", seconds=61)
-
-    print("✅ Generated:")
-    print("- output/post.txt")
-    print("- output/post_story.png (1080x1920)")
-    print("- output/post_feed.png (1080x1350)")
-    print("- output/short.mp4 (61s)")
+    for idx, block in enumerate(chosen_blocks, start=1):
+        normalized = normalize_post(block)
+        caption = make_caption(normalized)
+        # Save individual caption file
+        with open(f"output/post_{idx}.txt", "w", encoding="utf-8") as f:
+            f.write(caption)
+        # Append to daily log with separator
+        with open(f"output/posts_{today}.txt", "a", encoding="utf-8") as f:
+            f.write(caption)
+            f.write("\n" + ("-" * 30) + "\n\n")
+        # Render images
+        story_png = f"output/post_story_{idx}.png"
+        feed_png = f"output/post_feed_{idx}.png"
+        render_card(story_png, 1080, 1920, normalized)
+        render_card(feed_png, 1080, 1350, normalized)
+        # Generate static video
+        make_video_from_image(story_png, f"output/short_{idx}.mp4", seconds=61)
+    print("✅ Generated three posts and associated assets.")
 
 if __name__ == "__main__":
     main()
