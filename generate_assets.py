@@ -2,6 +2,7 @@ import os, random, textwrap, subprocess
 from datetime import datetime
 from PIL import Image, ImageDraw, ImageFont
 
+import imageio_ffmpeg
 HASHTAGS = [
     "#money", "#wealth", "#mindset", "#psychology", "#darkpsychology",
     "#discipline", "#success", "#financialfreedom", "#selfimprovement",
@@ -41,6 +42,7 @@ def normalize_post(block: str) -> str:
 def get_font(size: int, bold=True):
     # GitHub runner has DejaVu fonts. This path is stable on ubuntu-latest.
     path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" if bold else \
+     
            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
     return ImageFont.truetype(path, size=size)
 
@@ -135,15 +137,17 @@ Read that again.
 
 def make_video_from_image(image_path, out_mp4, seconds=61):
     # Super-stable: static image video. (No zoompan = fewer surprises)
-    cmd = [
-        "ffmpeg", "-y",
+    cmd = 
+        cmd = [
+        imageio_ffmpeg.get_ffmpeg_exe(), "-y",
         "-loop", "1", "-i", image_path,
         "-t", str(seconds),
         "-vf", "scale=1080:1920,format=yuv420p",
         "-r", "30",
         "-movflags", "+faststart",
         out_mp4
-    ]
+  ]  
+    
     subprocess.run(cmd, check=True)
 
 def main():
